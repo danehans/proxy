@@ -1,20 +1,3 @@
-# Copyright 2018 Istio Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-################################################################################
-#
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
@@ -24,13 +7,28 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
 
+# Proto and C++ generation from proto file
+proto_library(
+    name = "config",
+    srcs = ["config.proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "config_cc_proto",
+    deps = [":config"],
+)
+
+# Istio Stats filter implementation
 envoy_cc_library(
     name = "istio_stats",
     srcs = ["istio_stats.cc"],
     hdrs = ["istio_stats.h"],
     repository = "@envoy",
     deps = [
-        ":config_cc_proto",
+        ":config_cc_proto",  # Include the generated proto
         "//extensions/common:metadata_object_lib",
         "@com_google_cel_cpp//eval/public:builtin_func_registrar",
         "@com_google_cel_cpp//eval/public:cel_expr_builder_factory",
@@ -55,15 +53,18 @@ envoy_cc_library(
     ],
 )
 
-cc_proto_library(
-    name = "config_cc_proto",
-    deps = ["config"],
-)
-
-proto_library(
-    name = "config",
-    srcs = ["config.proto"],
+# Benchmark setup
+cc_binary(
+    name = "log_benchmark",
+    srcs = ["log_benchmark.cc"],
     deps = [
-        "@com_google_protobuf//:duration_proto",
+        "@com_github_google_benchmark//:benchmark",  # Google Benchmark
+        "@envoy//source/common/common:utility_lib",  # Envoy's common utility library
+        "@envoy//source/common/http:header_map_lib",  # Target for HTTP header maps
+        "@envoy//source/common/http:header_utility_lib",  # Target for HTTP header utilities
+        "@envoy//source/common/stream_info:stream_info_lib",  # Correct Envoy stream_info target
+        "@envoy//source/common/http:codes_lib",  # Target for HTTP status codes
+        "//source/extensions/filters/http/istio_stats:config_cc_proto",  # Include the generated proto
+        "//source/extensions/filters/http/istio_stats",  # Istio Stats Filter code
     ],
 )

@@ -73,3 +73,16 @@ install_deps()
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
 envoy_dependency_imports()
+
+http_archive(
+    name = "com_github_google_benchmark",
+    urls = ["https://github.com/google/benchmark/archive/v1.9.0.tar.gz"],
+    strip_prefix = "benchmark-1.9.0",
+    sha256 = "eae2482e8717f0c5ee7a3dd0d4807ceb9023d4b9",
+)
+
+# Load the dependencies from the correct location.
+load("@com_github_google_benchmark//:bazel/benchmark_deps.bzl", "benchmark_deps")
+
+# Call the benchmark dependencies rule to set them up.
+benchmark_deps()
